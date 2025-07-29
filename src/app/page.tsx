@@ -17,10 +17,41 @@ export default function HomePage() {
   const [descriptionVisible, setDescriptionVisible] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [customToneInput, setCustomToneInput] = useState("");
+  const [inputText, setInputText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [submittedText, setSubmittedText] = useState("");
 
   const getButtonLabel = (tone: string | null) => {
     if (!tone) return "Translate";
     return tone;
+  };
+
+  const handleTranslate = async () => {
+    setDescriptionVisible(false);
+    setSubmittedText(inputText);
+    setInputText("");
+
+    const res = await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: inputText,
+        tone: selectedTone,
+        customTone: customToneInput,
+      }),
+    });
+
+    const data = await res.json();
+    setTranslatedText(data.translation);
+  };
+
+  const handleToneChange = (tone: string) => {
+    setSelectedTone(tone);
+    setDescriptionVisible(true);
+    setInputText("");
+    setTranslatedText("");
+    setSubmittedText("");
+    if (tone !== "Custom") setCustomToneInput("");
   };
 
   return (
@@ -34,10 +65,7 @@ export default function HomePage() {
           {toneOptions.map((tone) => (
             <div
               key={tone}
-              onClick={() => {
-                setSelectedTone(tone);
-                setDescriptionVisible(true);
-              }}
+              onClick={() => handleToneChange(tone)}
               className={`cursor-pointer flex items-center gap-2 px-3 py-2 rounded-full transition-all text-sm ${
                 selectedTone === tone
                   ? "bg-pink-600 text-white font-semibold"
@@ -57,69 +85,87 @@ export default function HomePage() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex flex-col flex-grow sm:ml-56 w-full bg-[#111] px-6 pt-20">
-        {/* Mobile hamburger */}
-        <div className="sm:hidden flex justify-end px-2">
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-pink-500 text-2xl"
-          >
-            ☰
-          </button>
+      <div className="flex flex-col justify-between flex-grow sm:ml-56 w-full bg-[#111] px-6 pt-20 min-h-screen">
+        <div>
+          {/* Mobile hamburger */}
+          <div className="sm:hidden flex justify-end px-2">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-pink-500 text-2xl"
+            >
+              ☰
+            </button>
+          </div>
+
+          {/* Mobile tone menu */}
+          {mobileMenuOpen && (
+            <div className="sm:hidden p-4 space-y-2">
+              {toneOptions.map((tone) => (
+                <div
+                  key={tone}
+                  onClick={() => {
+                    handleToneChange(tone);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="cursor-pointer text-gray-400 hover:text-pink-400"
+                >
+                  {tone}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Tone Description */}
+          {descriptionVisible && selectedTone && selectedTone !== "Custom" && (
+            <div className="max-w-2xl w-full mx-auto mb-4 mt-4">
+              <div className="p-3 border border-pink-500 text-sm text-gray-300 rounded bg-[#111]">
+                {toneDescriptions[selectedTone]}
+              </div>
+            </div>
+          )}
+
+          {/* Custom Tone Input */}
+          {selectedTone === "Custom" && (
+            <div className="max-w-2xl w-full mx-auto mb-4 mt-4">
+              <input
+                type="text"
+                value={customToneInput}
+                onChange={(e) => setCustomToneInput(e.target.value)}
+                placeholder="Describe your translation style"
+                className="w-full p-2 border border-pink-500 rounded bg-black text-white placeholder:text-gray-500"
+              />
+            </div>
+          )}
+
+          {/* Input + Output */}
+          <div className="max-w-2xl w-full mx-auto space-y-4 pb-4">
+            {submittedText && (
+              <div className="p-3 bg-gray-900 text-gray-300 border border-gray-700 rounded">
+                <strong className="block mb-1 text-xs text-gray-500">Original</strong>
+                {submittedText}
+              </div>
+            )}
+
+            {translatedText && (
+              <div className="p-3 bg-gray-900 text-white border border-pink-600 rounded">
+                <strong className="block mb-1 text-xs text-pink-400">Translation</strong>
+                {translatedText}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Mobile tone menu */}
-        {mobileMenuOpen && (
-          <div className="sm:hidden p-4 space-y-2">
-            {toneOptions.map((tone) => (
-              <div
-                key={tone}
-                onClick={() => {
-                  setSelectedTone(tone);
-                  setDescriptionVisible(true);
-                  setMobileMenuOpen(false);
-                }}
-                className="cursor-pointer text-gray-400 hover:text-pink-400"
-              >
-                {tone}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Tone Description */}
-        {descriptionVisible && selectedTone && selectedTone !== "Custom" && (
-          <div className="max-w-2xl w-full mx-auto mb-4 mt-4">
-            <div className="p-3 border border-pink-500 text-sm text-gray-300 rounded bg-[#111]">
-              {toneDescriptions[selectedTone]}
-            </div>
-          </div>
-        )}
-
-        {/* Custom Tone Input */}
-        {selectedTone === "Custom" && (
-          <div className="max-w-2xl w-full mx-auto mb-4 mt-4">
-            <input
-              type="text"
-              value={customToneInput}
-              onChange={(e) => setCustomToneInput(e.target.value)}
-              placeholder="Describe your translation style"
-              className="w-full p-2 border border-pink-500 rounded bg-black text-white placeholder:text-gray-500"
-            />
-          </div>
-        )}
-
-        {/* Spacer to push input down */}
-        <div className="flex-grow" />
-
-        {/* Input + Button */}
-        <div className="max-w-2xl w-full mx-auto space-y-4 pb-4">
+        {/* Input at Bottom */}
+        <div className="max-w-2xl w-full mx-auto space-y-4 pb-6">
           <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
             placeholder="Paste text here..."
             className="w-full p-3 border border-gray-700 rounded-md resize-none min-h-[100px] bg-black text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
           />
+
           <button
-            onClick={() => setDescriptionVisible(false)}
+            onClick={handleTranslate}
             className="w-full bg-pink-600 text-white py-2 px-4 rounded-md hover:bg-pink-700 transition"
           >
             {getButtonLabel(selectedTone)}
@@ -129,4 +175,3 @@ export default function HomePage() {
     </main>
   );
 }
-
