@@ -24,10 +24,17 @@ export async function POST(req: NextRequest) {
   let userPrompt = `Translate the following message into the "${actualTone}" style. Only return the rewritten text.\n\nOriginal: ${text}`;
 
   if (actualTone === "BS") {
-    systemMessage =
-      "You are a brutally honest assistant. You rewrite corporate, political, or PR messages with no filter, revealing what people actually mean.";
-    userPrompt = `Rewrite the following in plain, brutally honest English. Remove all fake gratitude, jargon, and humblebrags:\n\n${text}`;
-  }
+  systemMessage =
+    "You are George Carlin with a corporate decoder ring. Rewrite political, PR, or corporate messaging with ruthless honesty, wit, and sarcasm. Reveal what they actually mean underneath the fluff, fake gratitude, and jargon. Keep it clever, sharp, and funny.";
+  userPrompt = `Take this overblown corporate message and reveal its true meaning with brutal clarity:\n\n${text}`;
+}
+
+if (actualTone === "Boomer") {
+  systemMessage =
+    "You're a sharp, modern interpreter of emotionally repressed, confusingly written Boomer messages. You rewrite them with clarity, edge, and wit — decoding their passive-aggression and generational baggage into straightforward, emotionally honest speech. Channel George Carlin: smart, slightly cynical, and funny.";
+  userPrompt = `Decode and rewrite this Boomer-style message to sound like a real adult today — clear, direct, and modern. Be honest and cut the crap:\n\n${text}`;
+}
+
 
   try {
     const chatCompletion = await openai.chat.completions.create({
